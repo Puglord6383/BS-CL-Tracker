@@ -54,7 +54,7 @@ You can also update all instances of 'BS-CL-Tracker-Spreadsheet.xlsx' in the fil
 
 ## Usage
 
-It's recommended to run this script on a server or, if you're on Windows, use Task Scheduler to run the program every 10 minutes during Club League weeks. To automate the script execution, you can create a Basic Task in Task Scheduler and set the trigger to Daily, then set the "Repeat task every" option to 10 minutes (or whatever time you like) for a duration of 24 hours. You can adjust the timings according to your needs.
+It's recommended to run this script on a server or, if you're on Windows, use Task Scheduler to run the program every once and a while. To automate the script execution, you can create a Basic Task in Task Scheduler and set the trigger to Daily, then set the "Repeat task every" option to 10 minutes (or whatever time you like) for a duration of 24 hours. You can adjust the timings according to your needs.
 
 To avoid rate limiting from the API, the program waits for 1 second after each API request. The API allows for 100 requests per minute. You may edit this if you need it to run faster for some reason.
 
