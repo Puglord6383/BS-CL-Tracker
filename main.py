@@ -6,6 +6,7 @@ import json
 import requests
 import pandas as pd
 import datetime
+import numpy as np
 
 headers = {
     "Accept": "application/json",
@@ -20,7 +21,7 @@ url_club = f"https://api.brawlstars.com/v1/clubs/{club_tag}/members"
 
 # Fetch club members
 #print('Fetching club members...')
-time.sleep(1)
+#time.sleep(1)
 response_club = requests.get(url_club, headers=headers)
 data_club = response_club.json()
 
@@ -34,6 +35,15 @@ data_club = response_club.json()
 club_members = {member['tag'].replace('#', '%23'): member['name'] for member in data_club['items']}
 
 # Try to load existing player stats, last processed battleTime, and the week counter from files
+try:
+    df_existing = pd.read_excel('BS-CL-Tracker-Spreadsheet.xlsx', index_col=0)
+    if 'Total Updates' in df_existing.columns and 'Last Update Time' in df_existing.columns:
+        total_updates = df_existing.iloc[0]['Total Updates'] + 1
+    else:
+        total_updates = 1
+except FileNotFoundError:
+    total_updates = 1
+
 try:
     player_stats = pd.read_excel('BS-CL-Tracker-Spreadsheet.xlsx', index_col=0).to_dict(orient='index')
 except FileNotFoundError:
@@ -60,7 +70,7 @@ for player_name in club_members.values():
 
 for player_id, player_name in club_members.items():
     url_battlelog = f"https://api.brawlstars.com/v1/players/{player_id}/battlelog"   # player battle logs
-    time.sleep(1)
+    #time.sleep(1)
     response_battlelog = requests.get(url_battlelog, headers=headers)
     
     #if response_battlelog.status_code == 200:
@@ -107,7 +117,18 @@ for player_id, player_name in club_members.items():
 
 # Save player stats and last processed battleTime to files
 df = pd.DataFrame(player_stats).T
-df.to_excel('BS-CL-Tracker-Spreadsheet.xlsx')
+
+# Calculate ratios
+df['Win/Loss Ratio'] = np.divide(df['Wins'], df['Wins'] + df['Losses'], where=(df['Wins']+df['Losses'])!=0)
+df['Team/Random Ratio'] = np.divide(df['Team'], df['Team'] + df['Solo'], where=(df['Team']+df['Solo'])!=0)
+
+# Sort the DataFrame by 'Trophies' column in descending order
+df = df.sort_values(by='Trophies', ascending=False)
+
+# Add total updates and last update time
+last_update_time = datetime.datetime.now()
+df.loc[df.index[0], 'Total Updates'] = total_updates
+df.loc[df.index[0], 'Last Update Time'] = last_update_time.strftime('%Y-%m-%d %H:%M:%S')
 
 # Update the last_battle_time.txt file only once, after processing all battle logs
 with open('last_battle_time.txt', 'w') as f:
@@ -121,5 +142,4 @@ if datetime.datetime.now().date() - last_increment_week.date() >= datetime.timed
     with open('last_increment_week.txt', 'w') as f:
         f.write(last_increment_week.strftime('%Y%m%d'))
 
-df = pd.DataFrame(player_stats).T
 df.to_excel('BS-CL-Tracker-Spreadsheet.xlsx')
