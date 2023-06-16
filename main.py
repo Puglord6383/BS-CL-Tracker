@@ -19,16 +19,16 @@ club_tag = club_tag.replace('#', '%23')
 url_club = f"https://api.brawlstars.com/v1/clubs/{club_tag}/members"
 
 # Fetch club members
-print('Fetching club members...')
+#print('Fetching club members...')
 time.sleep(1)
 response_club = requests.get(url_club, headers=headers)
 data_club = response_club.json()
 
 # Handle the response for club members
-if response_club.status_code == 200:
-    print(f'Successfully fetched club members: {len(data_club["items"])} members found.')
-else:
-    print(f'Failed to fetch club members: {response_club.status_code} - {data_club["message"]}')
+#if response_club.status_code == 200:
+    #print(f'Successfully fetched club members: {len(data_club["items"])} members found.')
+#else:
+    #print(f'Failed to fetch club members: {response_club.status_code} - {data_club["message"]}')
 
 # Generate club members dictionary
 club_members = {member['tag'].replace('#', '%23'): member['name'] for member in data_club['items']}
@@ -36,17 +36,24 @@ club_members = {member['tag'].replace('#', '%23'): member['name'] for member in 
 # Try to load existing player stats, last processed battleTime, and the week counter from files
 try:
     player_stats = pd.read_excel('BS-CL-Tracker-Spreadsheet.xlsx', index_col=0).to_dict(orient='index')
+except FileNotFoundError:
+    player_stats = {}
+
+try:
     with open('last_battle_time.txt', 'r') as f:
         last_battle_time = datetime.datetime.strptime(f.read(), '%Y%m%dT%H%M%S.%fZ')
+except FileNotFoundError:
+    last_battle_time = datetime.datetime.min
+
+try:
     with open('last_increment_week.txt', 'r') as f:
         last_increment_week = datetime.datetime.strptime(f.read(), '%Y%m%d')
 except FileNotFoundError:
-    player_stats = {}
-    last_battle_time = datetime.datetime.min
     last_increment_week = datetime.datetime.min
 
 # Initialize the weeks for new players and set the most recent battle time
 most_recent_battle_time = last_battle_time
+
 for player_name in club_members.values():
     if player_name not in player_stats:
         player_stats[player_name] = {'Trophies': 0, 'Wins': 0, 'Losses': 0, 'Team': 0, 'Solo': 0, 'Team Wins': 0, 'Team Losses': 0, 'Solo Wins': 0, 'Solo Losses': 0, 'Weeks': 0}
@@ -56,12 +63,12 @@ for player_id, player_name in club_members.items():
     time.sleep(1)
     response_battlelog = requests.get(url_battlelog, headers=headers)
     
-    if response_battlelog.status_code == 200:
-        print(f'Successfully fetched data for player {player_name}')
-    else:
-        data_battlelog = response_battlelog.json()
-        print(f'Failed to fetch data for player {player_name}: {response_battlelog.status_code} - {data_battlelog["message"]}')
-        continue
+    #if response_battlelog.status_code == 200:
+        #print(f'Successfully fetched data for player {player_name}')
+    #else:
+        #data_battlelog = response_battlelog.json()
+        #print(f'Failed to fetch data for player {player_name}: {response_battlelog.status_code} - {data_battlelog["message"]}')
+        #continue
 
     data_battlelog = response_battlelog.json()
     
@@ -96,7 +103,7 @@ for player_id, player_name in club_members.items():
             if battle_time > most_recent_battle_time:
                 most_recent_battle_time = battle_time
     trophies_added = player_stats[player_name]['Trophies'] - initial_trophies
-    print(f"{player_name} added {trophies_added} trophies.")
+    #print(f"{player_name} added {trophies_added} trophies.")
 
 # Save player stats and last processed battleTime to files
 df = pd.DataFrame(player_stats).T
